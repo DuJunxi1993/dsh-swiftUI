@@ -10,13 +10,23 @@ struct WebSurfaceView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
-        // dsh uses a single WebSocket upgrade for live agent traffic; the
-        // default preferences are correct for it.
         config.defaultWebpagePreferences.allowsContentJavaScript = true
         config.applicationNameForUserAgent = "dsh-swiftUI/0.1"
         let view = WKWebView(frame: .zero, configuration: config)
         view.allowsBackForwardNavigationGestures = false
+        view.translatesAutoresizingMaskIntoConstraints = false
         view.load(URLRequest(url: url))
+        // Defer constraint installation to the next runloop tick, by which
+        // time the SwiftUI container has wired up its NSHostingView.
+        DispatchQueue.main.async {
+            guard let superview = view.superview else { return }
+            NSLayoutConstraint.activate([
+                view.topAnchor.constraint(equalTo: superview.topAnchor),
+                view.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
+                view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: superview.trailingAnchor)
+            ])
+        }
         return view
     }
 
