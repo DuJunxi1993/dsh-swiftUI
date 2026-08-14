@@ -1,0 +1,70 @@
+name: DSHShell
+options:
+  bundleIdPrefix: ai.deepseek
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    PRODUCT_NAME: DSHShell
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: "0.1.0"
+configs:
+  Debug: debug
+  Release: release
+targets:
+  DSHShell:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/DSHShell
+      - path: Sources/DSHShellCore
+    info:
+      path: App/DSHShell/Info.plist
+      properties:
+        CFBundleName: dsh
+        CFBundleDisplayName: dsh
+        CFBundleIdentifier: ai.deepseek.dsh-shell
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: "© 2026 dsh-swiftUI contributors"
+        NSPrincipalClass: NSApplication
+        NSMainStoryboardFile: ""
+        NSHighResolutionCapable: true
+        LSApplicationCategoryType: public.app-category.developer-tools
+    entitlements:
+      path: App/DSHShell/DSHShell.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.network.client: true
+        com.apple.security.inherit: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.deepseek.dsh-shell
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 dsh-swiftUI contributors"
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_PREVIEWS: YES
+schemes:
+  DSHShell:
+    build:
+      targets:
+        DSHShell: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
