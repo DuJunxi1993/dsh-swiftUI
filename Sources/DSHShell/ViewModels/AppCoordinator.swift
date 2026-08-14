@@ -17,6 +17,7 @@ final class AppCoordinator: ObservableObject {
     private var manager: DSHProcessManager?
     private var observerTask: Task<Void, Never>?
     private var lastURL: URL?
+    private var lastChildPID: Int32?
     private let logger = Logger(subsystem: "ai.deepseek.dsh-shell", category: "AppCoordinator")
 
     init(store: SettingsStore = SettingsStore()) {
@@ -36,6 +37,41 @@ final class AppCoordinator: ObservableObject {
         observerTask = nil
         guard let manager else { return }
         Task { await manager.stop() }
+    }
+
+    /// Blocking shutdown for `applicationWillTerminate`. The process exits
+    /// immediately after the delegate returns, and by then the Swift
+    /// concurrency runtime is being torn down, so neither unstructured nor
+    /// detached `Task`s reliably get to run `manager.stop()` (observed: the
+    /// stop never executed and the child dsh web was orphaned). Instead we
+    /// signal the tracked child PID synchronously with `kill`/`waitpid` —
+    /// plain syscalls that cannot be dropped by teardown — and only then
+    /// attempt the best-effort actor cleanup.
+    func shutdownBlocking() {
+        observerTask?.cancel()
+        observerTask = nil
+        let pid = manager?.currentChildPID() ?? lastChildPID
+        if let pid {
+            kill(pid, SIGTERM)
+            let deadline = Date().addingTimeInterval(5)
+            while Date() < deadline {
+                var status: Int32 = 0
+                if waitpid(pid, &status, WNOHANG) != 0 { break }
+                usleep(100_000)
+            }
+            var status: Int32 = 0
+            if waitpid(pid, &status, WNOHANG) == 0 {
+                kill(pid, SIGKILL)
+            }
+        }
+        if let manager {
+            let semaphore = DispatchSemaphore(value: 0)
+            Task.detached {
+                await manager.stop()
+                semaphore.signal()
+            }
+            _ = semaphore.wait(timeout: .now() + 1)
+        }
     }
 
     func reload() {
@@ -65,14 +101,10 @@ final class AppCoordinator: ObservableObject {
         let manager = DSHProcessManager(settings: settings)
         self.manager = manager
         let events = await manager.events()
-        let eventsTask = Task { @MainActor in
+        _ = Task { @MainActor in
             for await event in events {
                 self.handle(event: event)
             }
-        }
-        defer {
-            eventsTask.cancel()
-            Task { await manager.stop() }
         }
 
         do {
@@ -94,6 +126,7 @@ final class AppCoordinator: ObservableObject {
             state = .launching
             appendConsole(.shell, text: "[shell] launching dsh…")
         case .launched(let pid):
+            lastChildPID = pid
             appendConsole(.shell, text: "[shell] dsh spawned (pid \(pid))")
         case .stdoutLine(let line):
             appendConsole(.dsh, text: line)
@@ -104,6 +137,7 @@ final class AppCoordinator: ObservableObject {
             lastURL = url
             appendConsole(.shell, text: "[shell] endpoint resolved: \(url.absoluteString)")
         case .childExited(let status):
+            lastChildPID = nil
             appendConsole(.shell, text: "[shell] dsh exited (status \(status))")
         case .autoRestartScheduled(let after):
             appendConsole(.shell, text: "[shell] auto-restart scheduled in \(Int(after))s")

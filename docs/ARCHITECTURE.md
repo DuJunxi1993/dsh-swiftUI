@@ -76,10 +76,12 @@ dsh web
   --host 127.0.0.1
   --port <preferredPort, 0 = OS-assigned>
   --trusted-host <each entry in trustedHosts>
-  --workspace <pwd, if the user has not chosen one>
 ```
 
-`--workspace` is omitted if the user has not picked a working directory; the dsh launcher then uses the cwd of the app (set in `App` to `~/Library/Application Support/dsh-swiftUI` by default to avoid unrelated project noise).
+dsh's web profile accepts exactly those three flags; anything else (e.g. a
+`--workspace`) is rejected as an unknown option. The SPA picks its own
+workspace inside the browser UI, so the shell forwards no working directory
+and `dsh web` defaults to its invoking cwd.
 
 ## 6. App Sandbox stance
 

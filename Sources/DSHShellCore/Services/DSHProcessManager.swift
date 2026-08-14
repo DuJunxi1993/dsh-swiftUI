@@ -21,7 +21,7 @@ public enum DSHProcessError: Error, LocalizedError, Sendable {
         case .spawnFailed(let code):
             return "Failed to spawn dsh (errno \(code))."
         case .timedOutWaitingForURL(let seconds):
-            return "dsh web did not print its URL line within \(seconds)s."
+            return "dsh web did not print its URL line within \(seconds)s. Check for a stale `dsh web` process (`pkill -f 'dsh web'`) and try again."
         case .noExistingEndpointFound:
             return "No existing dsh web instance was found on loopback ports."
         case .childExitedUnexpectedly(let code, let lines):
@@ -59,6 +59,10 @@ public actor DSHProcessManager {
     private var lastLogLines: [String] = []
     private var restartAttempts: Int = 0
     private var inFlightAttach: Task<URL?, Error>?
+    /// Cached PID of the currently spawned child, written synchronously right
+    /// after `Process.run()` succeeds so a teardown path that cannot `await`
+    /// the actor (e.g. `applicationWillTerminate`) can still signal the child.
+    nonisolated(unsafe) private var lastSpawnedPID: Int32?
 
     public init(settings: ShellSettings, resolver: EndpointResolver = EndpointResolver()) {
         self.settings = settings
@@ -139,6 +143,7 @@ public actor DSHProcessManager {
 
         self.process = process
         let pid = process.processIdentifier
+        lastSpawnedPID = pid
         broadcast(.launched(pid: pid))
 
         // Drain stdout/stderr. The detached tasks read from the pipe on a
@@ -156,6 +161,9 @@ public actor DSHProcessManager {
         // Wait for endpoint resolution with a per-instance deadline.
         let deadline = Date().addingTimeInterval(TimeInterval(settings.spawnTimeoutSeconds))
         while true {
+            if Task.isCancelled {
+                throw CancellationError()
+            }
             switch state {
             case .ready(let url):
                 return url
@@ -227,6 +235,7 @@ public actor DSHProcessManager {
     }
 
     private func handleChildExit(status: Int32) {
+        lastSpawnedPID = nil
         appendLog("[exit] status=\(status)")
         broadcast(.childExited(status: status))
         if case .shuttingDown = state { return }
@@ -250,6 +259,7 @@ public actor DSHProcessManager {
         do {
             _ = try await startSpawn()
         } catch {
+            state = .failed(reason: "Auto-restart failed: \(error.localizedDescription)")
             broadcast(.autoRestartAborted(reason: error.localizedDescription))
         }
     }
@@ -282,6 +292,7 @@ public actor DSHProcessManager {
         state = .shuttingDown
         guard let process else { return }
         let pid = process.processIdentifier
+        lastSpawnedPID = nil
         process.terminate()
         let deadline = Date().addingTimeInterval(5)
         while process.isRunning && Date() < deadline {
@@ -297,6 +308,13 @@ public actor DSHProcessManager {
     }
 
     // MARK: - Helpers
+
+    /// Synchronous accessor for the teardown path that cannot `await` the
+    /// actor (e.g. `applicationWillTerminate`). Reads the cached PID of the
+    /// current child, if any; see `lastSpawnedPID`.
+    nonisolated public func currentChildPID() -> Int32? {
+        lastSpawnedPID
+    }
 
     public static func validateBinary(_ path: String) throws {
         guard FileManager.default.fileExists(atPath: path) else {
@@ -315,9 +333,6 @@ public actor DSHProcessManager {
         }
         for host in settings.trustedHosts {
             argv.append(contentsOf: ["--trusted-host", host])
-        }
-        if let workspace = settings.workspaceRoot, !workspace.isEmpty {
-            argv.append(contentsOf: ["--workspace", workspace])
         }
         return argv
     }

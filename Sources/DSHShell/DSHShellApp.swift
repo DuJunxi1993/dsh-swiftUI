@@ -3,17 +3,16 @@ import DSHShellCore
 
 @main
 struct DSHShellApp: App {
-    @StateObject private var coordinator = AppCoordinator()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
         WindowGroup("dsh") {
             ShellScene()
-                .environmentObject(coordinator)
+                .environmentObject(appDelegate.coordinator)
                 .frame(minWidth: 800, minHeight: 600)
-                .onAppear { coordinator.start() }
-                .onDisappear { coordinator.shutdown() }
+                .onAppear { appDelegate.coordinator.start() }
+                .onDisappear { appDelegate.coordinator.shutdown() }
         }
-        .windowToolbarStyle(.unified(showsTitle: true))
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .appInfo) {
@@ -23,13 +22,13 @@ struct DSHShellApp: App {
             }
             CommandGroup(after: .windowArrangement) {
                 Button("Reload dsh") {
-                    coordinator.reload()
+                    appDelegate.coordinator.reload()
                 }
                 .keyboardShortcut("r", modifiers: [.command])
             }
             CommandGroup(after: .windowList) {
                 Button("Open Preferences…") {
-                    coordinator.showPreferences()
+                    appDelegate.coordinator.showPreferences()
                 }
                 .keyboardShortcut(",", modifiers: [.command])
             }
@@ -37,7 +36,21 @@ struct DSHShellApp: App {
 
         Settings {
             PreferencesView()
-                .environmentObject(coordinator)
+                .environmentObject(appDelegate.coordinator)
         }
+    }
+}
+
+/// Owns the single `AppCoordinator` for the app's lifetime. A plain `let`
+/// on the (reference-type) delegate guarantees the view tree, the scene
+/// closures, and `applicationWillTerminate` all touch the same instance —
+/// `@StateObject` inside an `App` struct is re-created when SwiftUI
+/// re-instantiates the struct, silently splitting state across instances.
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    let coordinator = AppCoordinator()
+
+    func applicationWillTerminate(_ notification: Notification) {
+        coordinator.shutdownBlocking()
     }
 }

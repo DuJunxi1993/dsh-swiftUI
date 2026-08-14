@@ -22,7 +22,6 @@ public struct ShellSettings: Codable, Equatable, Sendable {
     public var trustedHosts: [String]
     public var pollIntervalSeconds: Double
     public var spawnTimeoutSeconds: Int
-    public var workspaceRoot: String?
     public var autoRestartOnCrash: Bool
 
     public init(
@@ -32,8 +31,7 @@ public struct ShellSettings: Codable, Equatable, Sendable {
         preferredPort: Int = 0,
         trustedHosts: [String] = ["127.0.0.1", "localhost"],
         pollIntervalSeconds: Double = 0.5,
-        spawnTimeoutSeconds: Int = 60,
-        workspaceRoot: String? = nil,
+        spawnTimeoutSeconds: Int = 30,
         autoRestartOnCrash: Bool = true
     ) {
         self.dshBinaryPath = dshBinaryPath
@@ -43,7 +41,6 @@ public struct ShellSettings: Codable, Equatable, Sendable {
         self.trustedHosts = trustedHosts
         self.pollIntervalSeconds = pollIntervalSeconds
         self.spawnTimeoutSeconds = spawnTimeoutSeconds
-        self.workspaceRoot = workspaceRoot
         self.autoRestartOnCrash = autoRestartOnCrash
     }
 

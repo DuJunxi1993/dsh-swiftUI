@@ -16,15 +16,13 @@ final class DSHProcessManagerTests: XCTestCase {
         s.preferredPort = 5555
         s.listenHost = "127.0.0.1"
         s.trustedHosts = ["127.0.0.1", "::1"]
-        s.workspaceRoot = "/Users/djx/proj"
         let argv = DSHProcessManager.buildArgv(settings: s)
         XCTAssertEqual(argv, [
             "/opt/dsh", "web",
             "--host", "127.0.0.1",
             "--port", "5555",
             "--trusted-host", "127.0.0.1",
-            "--trusted-host", "::1",
-            "--workspace", "/Users/djx/proj"
+            "--trusted-host", "::1"
         ])
     }
 
@@ -52,7 +50,6 @@ final class DSHProcessManagerTests: XCTestCase {
             trustedHosts: ["a", "b"],
             pollIntervalSeconds: 1.25,
             spawnTimeoutSeconds: 30,
-            workspaceRoot: "/tmp",
             autoRestartOnCrash: false
         )
         let data = try JSONEncoder().encode(original)
