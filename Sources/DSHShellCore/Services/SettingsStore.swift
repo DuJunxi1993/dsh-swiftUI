@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 /// Loads and persists `ShellSettings` to a JSON file under
 /// `~/Library/Application Support/dsh-swiftUI/settings.json`.
@@ -8,6 +9,7 @@ public final class SettingsStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.dsh-swiftUI.settings", qos: .utility)
     private let fileURL: URL
     private var cached: ShellSettings?
+    private let logger = Logger(subsystem: "ai.deepseek.dsh-shell", category: "SettingsStore")
 
     public init(fileURL: URL? = nil) {
         if let fileURL {
@@ -47,8 +49,8 @@ public final class SettingsStore: @unchecked Sendable {
                 try data.write(to: fileURL, options: .atomic)
                 cached = settings
             } catch {
-                // Non-fatal: log to console but do not throw into the caller.
-                FileHandle.standardError.write(Data("[dsh-swiftUI] settings save failed: \(error.localizedDescription)\n".utf8))
+                // Non-fatal: surface through the unified log channel.
+                logger.error("settings save failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

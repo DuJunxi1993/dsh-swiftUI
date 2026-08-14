@@ -127,7 +127,13 @@ public actor DSHProcessManager {
         do {
             try process.run()
         } catch {
-            state = .failed(reason: "spawn failed: \(error.localizedDescription)")
+            let detail: String
+            if let e = error as? POSIXError {
+                detail = "POSIX code \(e.code.rawValue) (\(e.code)): \(e.localizedDescription)"
+            } else {
+                detail = "\(type(of: error)): \(error.localizedDescription)"
+            }
+            state = .failed(reason: "spawn failed: \(detail)")
             throw DSHProcessError.spawnFailed(-1)
         }
 

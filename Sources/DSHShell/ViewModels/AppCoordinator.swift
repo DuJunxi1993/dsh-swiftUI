@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import DSHShellCore
+import OSLog
 
 /// Bridges the SwiftUI shell to the underlying `DSHProcessManager`. Owns the
 /// process lifecycle for the lifetime of the app and exposes the connection
@@ -16,6 +17,7 @@ final class AppCoordinator: ObservableObject {
     private var manager: DSHProcessManager?
     private var observerTask: Task<Void, Never>?
     private var lastURL: URL?
+    private let logger = Logger(subsystem: "ai.deepseek.dsh-shell", category: "AppCoordinator")
 
     init(store: SettingsStore = SettingsStore()) {
         self.store = store
@@ -59,6 +61,7 @@ final class AppCoordinator: ObservableObject {
     // MARK: - Private
 
     private func runLifecycle() async {
+        logger.debug("runLifecycle: dsh=\(self.settings.dshBinaryPath, privacy: .public) mode=\(self.settings.launchMode.rawValue, privacy: .public)")
         let manager = DSHProcessManager(settings: settings)
         self.manager = manager
         let events = await manager.events()
@@ -74,8 +77,10 @@ final class AppCoordinator: ObservableObject {
 
         do {
             let url = try await manager.start()
+            logger.info("manager.start() returned url=\(url, privacy: .public)")
             self.lastURL = url
         } catch {
+            logger.error("manager.start() failed: \(String(describing: error), privacy: .public)")
             await MainActor.run {
                 self.state = .failed(reason: error.localizedDescription)
                 self.appendConsole(.shell, text: "[error] \(error.localizedDescription)")
