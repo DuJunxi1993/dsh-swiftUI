@@ -69,7 +69,9 @@ public actor DSHProcessManager {
     public func events() -> AsyncStream<DSHProcessEvent> {
         AsyncStream { continuation in
             let id = UUID()
-            Task { await self.addListener(id: id, continuation: continuation) }
+            // Closure runs outside the actor; hop in to register.
+            let selfRef = self
+            Task { await selfRef.addListener(id: id, continuation: continuation) }
             continuation.onTermination = { @Sendable [weak self] _ in
                 Task { await self?.removeListener(id: id) }
             }
@@ -134,12 +136,10 @@ public actor DSHProcessManager {
         broadcast(.launched(pid: pid))
 
         // Drain stdout/stderr. The detached tasks read from the pipe on a
-        // utility-priority executor; the FileHandles are reference types
-        // pinned to the child process for its lifetime. We mark the local
-        // bindings `nonisolated(unsafe)` so the strict-concurrency checker
-        // accepts the cross-actor closure capture.
-        nonisolated(unsafe) let outHandle = stdoutPipe.fileHandleForReading
-        nonisolated(unsafe) let errHandle = stderrPipe.fileHandleForReading
+        // utility-priority executor; FileHandle is Sendable, so the closures
+        // can capture the local bindings without ceremony.
+        let outHandle = stdoutPipe.fileHandleForReading
+        let errHandle = stderrPipe.fileHandleForReading
         stdoutTask = Task.detached(priority: .utility) { [weak self] in
             await self?.drain(handle: outHandle, isErr: false)
         }
@@ -153,9 +153,8 @@ public actor DSHProcessManager {
             switch state {
             case .ready(let url):
                 return url
-            case .failed(let reason):
-                throw DSHProcessError.timedOutWaitingForURL(0) // carry reason upward via Diagnose helper below
-                _ = reason
+            case .failed:
+                throw DSHProcessError.spawnFailed(-1)
             case .shuttingDown:
                 throw DSHProcessError.spawnFailed(-1)
             default:
@@ -167,38 +166,37 @@ public actor DSHProcessManager {
         }
     }
 
-    /// Reads one line at a time from a `FileHandle` and forwards it to the
-    /// actor. Marked `nonisolated` so we can run it inside a `Task.detached`
-    /// without dragging the actor's executor with us. FileHandle is unsafe to
-    /// share across actors in the general case, so we mark the parameter
-    /// `nonisolated(unsafe)` to accept the borrow.
+    /// Reads one byte at a time from a `FileHandle.AsyncBytes` and accumulates
+    /// them into a `Data` buffer, splitting on `0x0A` (newline) and forwarding
+    /// each line to the actor. Marked `nonisolated` so it can run inside a
+    /// `Task.detached` without dragging the actor's executor.
     private nonisolated func drain(handle: FileHandle, isErr: Bool) async {
         var buffer = Data()
+        func emit(_ line: String) {
+            Task { [weak self] in
+                guard let self else { return }
+                if isErr {
+                    await self.consumeStderr(line)
+                } else {
+                    await self.consumeStdout(line)
+                }
+            }
+        }
         do {
-            for try await chunk in handle.bytes {
-                if chunk.isEmpty { continue }
-                buffer.append(chunk)
-                while let nl = buffer.firstIndex(of: 0x0A) {
-                    let lineData = buffer.subdata(in: buffer.startIndex..<nl)
-                    let dropRange = buffer.startIndex...nl
-                    buffer.removeSubrange(dropRange)
-                    let line = String(data: lineData, encoding: .utf8) ?? ""
-                    if isErr {
-                        await self.consumeStderr(line)
-                    } else {
-                        await self.consumeStdout(line)
-                    }
+            for try await byte in handle.bytes {
+                if byte == 0x0A {
+                    let line = String(data: buffer, encoding: .utf8) ?? ""
+                    buffer.removeAll(keepingCapacity: true)
+                    emit(line)
+                } else {
+                    buffer.append(byte)
                 }
             }
             if !buffer.isEmpty, let last = String(data: buffer, encoding: .utf8) {
-                if isErr {
-                    await self.consumeStderr(last)
-                } else {
-                    await self.consumeStdout(last)
-                }
+                emit(last)
             }
         } catch {
-            // fd closed
+            // fd closed or read failed
         }
     }
 

@@ -28,12 +28,19 @@ final class DSHProcessManagerTests: XCTestCase {
         ])
     }
 
-    func testBuildArgvOmitsPortWhenZero() {
+    func testBuildArgvIncludesPortZeroForOSAssignment() {
         var s = ShellSettings.default
         s.dshBinaryPath = "/opt/dsh"
         s.preferredPort = 0
         let argv = DSHProcessManager.buildArgv(settings: s)
-        XCTAssertFalse(argv.contains("--port"))
+        // We pass `--port 0` through to dsh so the OS picks the port. dsh's
+        // webserver treats port=0 as "ask the kernel".
+        XCTAssertTrue(argv.contains("--port"))
+        if let i = argv.firstIndex(of: "--port") {
+            XCTAssertEqual(argv[i + 1], "0")
+        } else {
+            XCTFail("expected --port 0 in argv")
+        }
     }
 
     func testSettingsRoundTrip() throws {
