@@ -8,6 +8,8 @@ A native macOS shell for the [DeepSeek Harness](https://github.com/deepseek-ai/d
 
 This first milestone delivers the **main panel only** — the WKWebView pointing at the dsh SPA, with a transparent titlebar and a floating status badge. The roadmap for future native panels (Git, file tree, in-process terminal) is captured in [`docs/ROADMAP.md`](docs/ROADMAP.md); that work is intentionally deferred.
 
+![dsh-swiftUI main window](docs/screenshots/main-window.png)
+
 ---
 
 ## What works
