@@ -56,7 +56,7 @@ public struct AttachProbe: Sendable {
     public let portsToScan: [Int]
     public let concurrency: Int
 
-    public init(portsToScan: [Int] = (49152..=65535).map { $0 } + (54321...54325).map { $0 }, concurrency: Int = 32) {
+    public init(portsToScan: [Int] = (49152..<65536).map { $0 } + Array(54321...54325), concurrency: Int = 32) {
         self.portsToScan = portsToScan
         self.concurrency = concurrency
     }
