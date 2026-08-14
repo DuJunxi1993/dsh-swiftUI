@@ -31,20 +31,6 @@ struct PreferencesView: View {
                     }
                 }
             }
-            Section("Workspace") {
-                LabeledContent("Folder") {
-                    HStack {
-                        TextField("(use app cwd)", text: Binding(
-                            get: { working.workspaceRoot ?? "" },
-                            set: { working.workspaceRoot = $0.isEmpty ? nil : $0 }
-                        ))
-                        .textFieldStyle(.roundedBorder)
-                        Button("Choose…") {
-                            pickWorkspace()
-                        }
-                    }
-                }
-            }
             Section("Connection") {
                 Picker("Mode", selection: $working.launchMode) {
                     Text("Spawn dsh web").tag(LaunchMode.spawn)
@@ -135,16 +121,6 @@ struct PreferencesView: View {
         panel.directoryURL = URL(fileURLWithPath: "/usr/local/bin")
         if panel.runModal() == .OK, let url = panel.url {
             working.dshBinaryPath = url.path
-        }
-    }
-
-    private func pickWorkspace() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK, let url = panel.url {
-            working.workspaceRoot = url.path
         }
     }
 }

@@ -10,7 +10,12 @@ settings:
     SWIFT_VERSION: "6.0"
     MACOSX_DEPLOYMENT_TARGET: "15.0"
     DEAD_CODE_STRIPPING: YES
-    ENABLE_HARDENED_RUNTIME: YES
+    # Ad-hoc signed (no development team). Hardened Runtime would enable
+    # library validation, which requires the embedded DSHShellCore.framework
+    # to be signed by the same team as the app; ad-hoc signatures have no
+    # Team ID, so dyld rejects the framework ("different Team IDs") and the
+    # app aborts at launch. Only meaningful with a real signing identity.
+    ENABLE_HARDENED_RUNTIME: NO
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     PRODUCT_NAME: DSHShell
@@ -46,6 +51,8 @@ targets:
     platform: macOS
     sources:
       - path: Sources/DSHShell
+      - path: App/DSHShell/AppIcon.icns
+        buildPhase: resources
     dependencies:
       - target: DSHShellCore
     info:
@@ -54,6 +61,7 @@ targets:
         CFBundleName: dsh
         CFBundleDisplayName: dsh
         CFBundleIdentifier: ai.deepseek.dsh-shell
+        CFBundleIconFile: AppIcon
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)

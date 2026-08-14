@@ -14,6 +14,7 @@
 		7226723F560300B9A19DFE0A /* LaunchMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3948E77E82527D2681372B2 /* LaunchMode.swift */; };
 		74C53526AB41048A10851FD0 /* DSHShellCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E71C709353A0ABDF43036D3F /* DSHShellCore.framework */; };
 		7E7EBD3CF0AAC9060B1717DA /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E61F41F8C45AF8903782FEA8 /* LoadingView.swift */; };
+		7F5E6E1A79EB5B64F36B548E /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 7FA498CAEF0366440E369E46 /* AppIcon.icns */; };
 		9C22D7D3069E1046CD86D6F1 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DD6AF2425B38B104B7229E /* SettingsStore.swift */; };
 		AEE7D744DB0F13473BB0BCCF /* WebSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6169E7629BEB3B0D2D74536 /* WebSurfaceView.swift */; };
 		BD427EDF6ACBE3348C0693DB /* HealthProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D81232BC0BF5DCC4FC75EA /* HealthProbe.swift */; };
@@ -55,6 +56,7 @@
 		29DD6AF2425B38B104B7229E /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		5DD14FD8BEB3964858ABE8A7 /* ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
 		759E0C2EEE18DB8D7145ED3F /* ShellScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellScene.swift; sourceTree = "<group>"; };
+		7FA498CAEF0366440E369E46 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		88B55A6F32159842400F8E02 /* DSHProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHProcessManager.swift; sourceTree = "<group>"; };
 		94D81232BC0BF5DCC4FC75EA /* HealthProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthProbe.swift; sourceTree = "<group>"; };
 		BD461005C588053EACCEBA44 /* EndpointResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndpointResolver.swift; sourceTree = "<group>"; };
@@ -76,6 +78,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		29A5799602D1AEFD760077D3 /* DSHShell */ = {
+			isa = PBXGroup;
+			children = (
+				7FA498CAEF0366440E369E46 /* AppIcon.icns */,
+			);
+			path = DSHShell;
+			sourceTree = "<group>";
+		};
 		2D96400EC095FF25D59DE38D /* DSHShell */ = {
 			isa = PBXGroup;
 			children = (
@@ -129,6 +139,7 @@
 		BD42F78AF0019D3F06504865 = {
 			isa = PBXGroup;
 			children = (
+				E1AF1E91BC2C0BA5B6368247 /* App */,
 				E245BD25E668A8B42782289B /* Sources */,
 				A0F91A57E202F351818690F1 /* Products */,
 			);
@@ -149,6 +160,14 @@
 				22CA21034947305DFF222C75 /* AppCoordinator.swift */,
 			);
 			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		E1AF1E91BC2C0BA5B6368247 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				29A5799602D1AEFD760077D3 /* DSHShell */,
+			);
+			path = App;
 			sourceTree = "<group>";
 		};
 		E245BD25E668A8B42782289B /* Sources */ = {
@@ -185,6 +204,7 @@
 			buildConfigurationList = D04A3307A395E9ED2BEEB66E /* Build configuration list for PBXNativeTarget "DSHShell" */;
 			buildPhases = (
 				FA2F0DEAABFB45495C5BE4FD /* Sources */,
+				126E126DB92D91670986F3D8 /* Resources */,
 				EFE0C57BEB383284F1A2BBF1 /* Frameworks */,
 				243B29BB30222855C13F8F9F /* Embed Frameworks */,
 			);
@@ -238,6 +258,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		126E126DB92D91670986F3D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F5E6E1A79EB5B64F36B548E /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C61568EA227DB82FF0B93308 /* Sources */ = {
@@ -360,7 +391,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -473,7 +504,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;

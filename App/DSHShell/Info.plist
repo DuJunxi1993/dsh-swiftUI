@@ -8,6 +8,8 @@
 	<string>dsh</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>ai.deepseek.dsh-shell</string>
 	<key>CFBundleInfoDictionaryVersion</key>

@@ -2,21 +2,21 @@ import SwiftUI
 import DSHShellCore
 
 /// Top-level scene. Shows one of three states: a loading overlay, the WKWebView,
-/// or an error view with a retry button.
+/// or an error view with a retry button. The connection status badge floats in
+/// the middle of the (transparent) titlebar, without a toolbar or any material.
 struct ShellScene: View {
     @EnvironmentObject private var coordinator: AppCoordinator
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             background
             content
+            statusBadge
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.top, 6)
+                .ignoresSafeArea(edges: .top)
         }
         .background(WindowAccessor())
-        .toolbar {
-            ToolbarItemGroup(placement: .principal) {
-                statusBadge
-            }
-        }
     }
 
     @ViewBuilder
@@ -54,6 +54,12 @@ struct ShellScene: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(Color(nsColor: .windowBackgroundColor))
+        )
     }
 
     private var badgeColor: Color {
@@ -82,8 +88,9 @@ private struct WindowAccessor: NSViewRepresentable {
         let view = NSView()
         DispatchQueue.main.async {
             guard let window = view.window else { return }
-            window.titlebarAppearsTransparent = false
-            window.title = "dsh"
+            window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
+            window.title = ""
         }
         return view
     }
