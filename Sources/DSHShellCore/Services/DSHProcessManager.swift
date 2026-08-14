@@ -6,6 +6,7 @@ public enum DSHProcessError: Error, LocalizedError, Sendable {
     case binaryNotExecutable(String)
     case alreadyRunning
     case spawnFailed(Int32)
+    case spawnFailedWithDetail(Int32, String)
     case timedOutWaitingForURL(Int)
     case noExistingEndpointFound
     case childExitedUnexpectedly(Int32, lastLogLines: [String])
@@ -19,7 +20,9 @@ public enum DSHProcessError: Error, LocalizedError, Sendable {
         case .alreadyRunning:
             return "A dsh process is already running under this manager."
         case .spawnFailed(let code):
-            return "Failed to spawn dsh (errno \(code))."
+            return "Failed to spawn dsh (errno \(code)). If dsh is a node script, ensure `node` is reachable from the app's PATH (e.g. /opt/homebrew/bin)."
+        case .spawnFailedWithDetail(let code, let detail):
+            return "Failed to spawn dsh (errno \(code)): \(detail)"
         case .timedOutWaitingForURL(let seconds):
             return "dsh web did not print its URL line within \(seconds)s. Check for a stale `dsh web` process (`pkill -f 'dsh web'`) and try again."
         case .noExistingEndpointFound:
@@ -117,6 +120,7 @@ public actor DSHProcessManager {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: settings.dshBinaryPath)
         process.arguments = Array(argv.dropFirst())
+        process.environment = Self.childEnvironment(dshBinaryPath: settings.dshBinaryPath)
 
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -138,7 +142,7 @@ public actor DSHProcessManager {
                 detail = "\(type(of: error)): \(error.localizedDescription)"
             }
             state = .failed(reason: "spawn failed: \(detail)")
-            throw DSHProcessError.spawnFailed(-1)
+            throw DSHProcessError.spawnFailedWithDetail(-1, detail)
         }
 
         self.process = process
@@ -335,5 +339,30 @@ public actor DSHProcessManager {
             argv.append(contentsOf: ["--trusted-host", host])
         }
         return argv
+    }
+
+    /// PATH for the child process. Launching the app from Finder gives the
+    /// process a minimal PATH (no Homebrew or npm locations), while `dsh` is a
+    /// node script whose shebang is `#!/usr/bin/env node`; without `node` on
+    /// the PATH the exec fails and the app reports "Failed to spawn dsh".
+    /// Rebuild a sane PATH from common node install locations plus the
+    /// app's own PATH.
+    static func childEnvironment(dshBinaryPath: String) -> [String: String] {
+        var env = ProcessInfo.processInfo.environment
+        var dirs: [String] = []
+        dirs.append((dshBinaryPath as NSString).deletingLastPathComponent)
+        dirs.append(contentsOf: ["/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", "/usr/local/sbin"])
+        let nvmRoot = NSHomeDirectory() + "/.nvm/versions/node"
+        if FileManager.default.fileExists(atPath: nvmRoot) {
+            let versions = (try? FileManager.default.contentsOfDirectory(atPath: nvmRoot)) ?? []
+            for version in versions.sorted(by: >) {
+                dirs.append(nvmRoot + "/" + version + "/bin")
+            }
+        }
+        if let existing = env["PATH"], !existing.isEmpty {
+            dirs.append(existing)
+        }
+        env["PATH"] = dirs.joined(separator: ":")
+        return env
     }
 }
