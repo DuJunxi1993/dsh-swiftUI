@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "ai.deepseek.dsh-shell", category: "DSHProcessManager")
 
 /// Errors thrown by `DSHProcessManager`.
 public enum DSHProcessError: Error, LocalizedError, Sendable {
@@ -116,6 +119,11 @@ public actor DSHProcessManager {
         state = .launching
         broadcast(.launching)
 
+        // An orphaned `dsh web` from a previous session may still hold the
+        // fixed preferred port. Reclaim it (only if it truly serves the dsh
+        // SPA) so the fresh child can bind.
+        await Self.reclaimPort(host: settings.listenHost, port: settings.preferredPort)
+
         let argv = Self.buildArgv(settings: settings)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: settings.dshBinaryPath)
@@ -166,22 +174,90 @@ public actor DSHProcessManager {
         let deadline = Date().addingTimeInterval(TimeInterval(settings.spawnTimeoutSeconds))
         while true {
             if Task.isCancelled {
+                await terminateSpawnedChild()
                 throw CancellationError()
             }
             switch state {
             case .ready(let url):
                 return url
             case .failed:
+                await terminateSpawnedChild()
                 throw DSHProcessError.spawnFailed(-1)
             case .shuttingDown:
+                await terminateSpawnedChild()
                 throw DSHProcessError.spawnFailed(-1)
             default:
+                // The URL line can be late by 30s+ (dsh's own startup loader
+                // gates it) while the HTTP server is already up. With a fixed
+                // preferred port we race the URL line against a health probe
+                // of the known port and adopt whichever confirms first, so a
+                // slow loader never makes the user wait.
                 if Date() >= deadline {
+                    if let url = await adoptByProbe() {
+                        return url
+                    }
+                    await terminateSpawnedChild()
                     throw DSHProcessError.timedOutWaitingForURL(settings.spawnTimeoutSeconds)
                 }
-                try? await Task.sleep(nanoseconds: 100_000_000)
+                if let url = await probeFixedPort() {
+                    return url
+                }
+                try? await Task.sleep(nanoseconds: 200_000_000)
             }
         }
+    }
+
+    /// One-shot health probe of the fixed preferred port. Returns the URL
+    /// when the endpoint already serves the dsh SPA; nil when not applicable
+    /// or not yet up.
+    private func probeFixedPort() async -> URL? {
+        guard settings.preferredPort > 0,
+              ["127.0.0.1", "localhost"].contains(settings.listenHost) else {
+            return nil
+        }
+        guard let process, process.isRunning else { return nil }
+        guard let url = URL(string: "http://\(settings.listenHost):\(settings.preferredPort)/") else { return nil }
+        let probe = HealthProbe()
+        if await probe.probe(url: url).isAdoptable {
+            logger.debug("adopted endpoint by probe (URL line not yet emitted): \(url.absoluteString, privacy: .public)")
+            state = .ready(url)
+            broadcast(.endpointResolved(url))
+            return url
+        }
+        return nil
+    }
+
+    /// When the child printed no URL line but we know its expected port, wait
+    /// for the HTTP endpoint to come up and adopt it. `dsh web` takes 1-60s+
+    /// to settle depending on startup work; the probe tolerates that latency
+    /// while the URL-line parse alone would give up.
+    private func adoptByProbe() async -> URL? {
+        let deadline = Date().addingTimeInterval(30)
+        while Date() < deadline {
+            if let url = await probeFixedPort() {
+                return url
+            }
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+        return nil
+    }
+
+    /// Best-effort teardown of the just-spawned child when startup fails
+    /// (timeout, cancellation, or a mid-start error). Prevents a dsh web that
+    /// never reported its endpoint from lingering as an orphan.
+    private func terminateSpawnedChild() async {
+        guard let process, process.isRunning else { return }
+        let pid = process.processIdentifier
+        lastSpawnedPID = nil
+        process.terminate()
+        let deadline = Date().addingTimeInterval(3)
+        while process.isRunning && Date() < deadline {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        if process.isRunning {
+            kill(pid, SIGKILL)
+        }
+        self.process = nil
     }
 
     /// Reads one byte at a time from a `FileHandle.AsyncBytes` and accumulates
@@ -339,6 +415,42 @@ public actor DSHProcessManager {
             argv.append(contentsOf: ["--trusted-host", host])
         }
         return argv
+    }
+
+    /// Kills whatever process listens on `port` when it serves the dsh SPA.
+    /// This is the orphan reaper: `dsh web` spawned by a previous app session
+    /// survives `pkill`/crashes (SIGTERM does not run our cleanup), and with a
+    /// fixed preferred port a leftover instance would make the next spawn die
+    /// with EADDRINUSE. We only touch listeners that pass the dsh probe, so a
+    /// user service squatting on the same port is left alone.
+    static func reclaimPort(host: String, port: Int) async {
+        guard port > 0, ["127.0.0.1", "localhost"].contains(host) else { return }
+        guard let url = URL(string: "http://\(host):\(port)/") else { return }
+        let probe = HealthProbe()
+        guard await probe.probe(url: url, timeout: 0.8).isAdoptable else { return }
+
+        let lsof = Process()
+        lsof.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        lsof.arguments = ["-tiTCP:\(port)", "-sTCP:LISTEN"]
+        let pipe = Pipe()
+        lsof.standardOutput = pipe
+        lsof.standardError = Pipe()
+        do {
+            try lsof.run()
+        } catch {
+            return
+        }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        lsof.waitUntilExit()
+        for raw in String(data: data, encoding: .utf8)?.split(separator: "\n") ?? [] {
+            guard let pid = Int32(raw) else { continue }
+            kill(pid, SIGTERM)
+            let deadline = Date().addingTimeInterval(2)
+            while Date() < deadline, kill(pid, 0) == 0 {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+            }
+            if kill(pid, 0) == 0 { kill(pid, SIGKILL) }
+        }
     }
 
     /// PATH for the child process. Launching the app from Finder gives the

@@ -28,10 +28,10 @@ public struct ShellSettings: Codable, Equatable, Sendable {
         dshBinaryPath: String = "/Users/djx/.npm-global/bin/dsh",
         launchMode: LaunchMode = .spawn,
         listenHost: String = "127.0.0.1",
-        preferredPort: Int = 0,
+        preferredPort: Int = 34247,
         trustedHosts: [String] = ["127.0.0.1", "localhost"],
         pollIntervalSeconds: Double = 0.5,
-        spawnTimeoutSeconds: Int = 30,
+        spawnTimeoutSeconds: Int = 60,
         autoRestartOnCrash: Bool = true
     ) {
         self.dshBinaryPath = dshBinaryPath
