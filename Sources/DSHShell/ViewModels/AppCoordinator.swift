@@ -2,6 +2,13 @@ import Foundation
 import SwiftUI
 import DSHShellCore
 import OSLog
+import UserNotifications
+
+/// State reported by the dsh SPA through the injected bridge script.
+struct WebSessionState: Equatable {
+    var title: String?
+    var agentRunning: Bool = false
+}
 
 /// Bridges the SwiftUI shell to the underlying `DSHProcessManager`. Owns the
 /// process lifecycle for the lifetime of the app and exposes the connection
@@ -12,12 +19,16 @@ final class AppCoordinator: ObservableObject {
     @Published var settings: ShellSettings = .default
     @Published var consoleLines: [ConsoleLine] = []
     @Published var isPresentingPreferences: Bool = false
+    @Published var webSession: WebSessionState = .init()
 
     private let store: SettingsStore
     private var manager: DSHProcessManager?
     private var observerTask: Task<Void, Never>?
     private var lastURL: URL?
     private var lastChildPID: Int32?
+    private var bridge: WebBridge?
+    private var agentWasRunning = false
+    private var agentRunningSince: Date?
     private let logger = Logger(subsystem: "ai.deepseek.dsh-shell", category: "AppCoordinator")
 
     init(store: SettingsStore = SettingsStore()) {
@@ -94,6 +105,30 @@ final class AppCoordinator: ObservableObject {
         isPresentingPreferences = true
     }
 
+    // MARK: - Web bridge
+
+    /// The injected bridge forwards a `probe` shortly after the SPA mounts.
+    /// Log the candidates so the selectors in `bridge.js` can be tuned against
+    /// the real page without guessing.
+    private func logProbe(_ report: WebProbeReport) {
+        let heads = report.headings.prefix(3).map { "\($0.tag):\($0.text.prefix(40))" }.joined(separator: " | ")
+        let buttons = report.buttons.prefix(6).map { "\($0.attribute.isEmpty ? $0.text : $0.attribute)" }.joined(separator: " | ")
+        let inputs = report.inputs.map { "\($0.tag)@\($0.attribute)" }.joined(separator: " | ")
+        logger.debug("bridge probe — headings[\(report.headings.count)]: \(heads, privacy: .public)")
+        logger.debug("bridge probe — buttons[\(report.buttons.count)]: \(buttons, privacy: .public)")
+        logger.debug("bridge probe — inputs[\(report.inputs.count)]: \(inputs, privacy: .public)")
+    }
+
+    private func notifyAgentIdle() {
+        guard let since = agentRunningSince, Date().timeIntervalSince(since) > 5 else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "Agent 已空闲"
+        content.body = webSession.title.map { "\($0) — 任务完成" } ?? "任务完成"
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
     // MARK: - Private
 
     private func runLifecycle() async {
@@ -129,8 +164,10 @@ final class AppCoordinator: ObservableObject {
             lastChildPID = pid
             appendConsole(.shell, text: "[shell] dsh spawned (pid \(pid))")
         case .stdoutLine(let line):
+            logger.debug("dsh stdout: \(line, privacy: .public)")
             appendConsole(.dsh, text: line)
         case .stderrLine(let line):
+            logger.debug("dsh stderr: \(line, privacy: .public)")
             appendConsole(.dsh, text: line)
         case .endpointResolved(let url):
             state = .ready(url)
@@ -152,5 +189,61 @@ final class AppCoordinator: ObservableObject {
         let line = ConsoleLine(origin: origin, text: text)
         consoleLines.append(line)
         if consoleLines.count > 2000 { consoleLines.removeFirst(consoleLines.count - 2000) }
+    }
+}
+
+// MARK: - WebBridgeClient
+
+extension AppCoordinator: WebBridgeClient {
+    func handleBridgeEvent(_ event: WebBridgeEvent) {
+        switch event {
+        case .probe(let report):
+            logProbe(report)
+        case .title(let text):
+            webSession.title = text.isEmpty ? nil : text
+        case .agentState(let running):
+            if running {
+                agentWasRunning = true
+                agentRunningSince = Date()
+            } else if agentWasRunning {
+                agentWasRunning = false
+                notifyAgentIdle()
+            }
+            webSession.agentRunning = running
+        case .ack(let action, let ok):
+            logger.debug("bridge ack — \(action, privacy: .public) ok=\(ok, privacy: .public)")
+        case .unknown(let type):
+            logger.debug("bridge unknown event: \(type, privacy: .public)")
+        }
+    }
+
+    func bridgeReady(_ bridge: WebBridge) {
+        self.bridge = bridge
+        bridge.invoke(.setCssShim(true))
+    }
+
+    func webFocusComposer() {
+        bridge?.invoke(.focusComposer)
+    }
+
+    func webSendMessage() {
+        bridge?.invoke(.sendMessage)
+    }
+
+    func webNewSession() {
+        bridge?.invoke(.newSession)
+    }
+
+    func webOpenWorkspace() {
+        bridge?.invoke(.openWorkspace)
+    }
+
+    func webInjectText(_ text: String) {
+        bridge?.invoke(.injectText(text))
+    }
+
+    func handleDroppedFiles(_ paths: [String]) {
+        webInjectText(paths.joined(separator: "\n"))
+        logger.info("dropped \(paths.count, privacy: .public) file(s) into composer")
     }
 }

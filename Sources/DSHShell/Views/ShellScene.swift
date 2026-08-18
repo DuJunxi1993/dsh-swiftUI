@@ -17,14 +17,22 @@ struct ShellScene: View {
                 .ignoresSafeArea(edges: .top)
         }
         .background(WindowAccessor())
+        .onReceive(coordinator.$webSession) { session in
+            guard let window = NSApp.windows.first(where: { $0.isVisible }) else { return }
+            if let title = session.title, !title.isEmpty {
+                window.title = "\(title) — dsh"
+            } else {
+                window.title = "dsh"
+            }
+        }
     }
 
     @ViewBuilder
     private var content: some View {
         switch coordinator.state {
         case .ready(let url):
-            WebSurfaceView(url: url)
-                .ignoresSafeArea(edges: .bottom)
+            WebSurfaceView(url: url, bridgeClient: coordinator)
+                .ignoresSafeArea(edges: [.top, .bottom])
         case .failed(let reason):
             ErrorView(reason: reason) {
                 coordinator.reload()
@@ -63,22 +71,33 @@ struct ShellScene: View {
     }
 
     private var badgeColor: Color {
+        if coordinator.webSession.agentRunning { return .orange }
         switch coordinator.state {
         case .ready: return .green
         case .failed: return .red
-        case .shuttingDown: return .orange
+        case .shuttingDown: return .gray
         default: return .yellow
         }
     }
 
     private var badgeText: String {
+        let title = coordinator.webSession.title
         switch coordinator.state {
-        case .ready(let url): return "ready · \(url.host ?? url.absoluteString)"
-        case .connecting(let host, _): return "connecting · \(host)"
-        case .failed: return "failed"
-        case .launching: return "launching"
-        case .shuttingDown: return "shutting down"
-        case .idle: return "idle"
+        case .ready(let url):
+            if coordinator.webSession.agentRunning {
+                return "thinking · \(title ?? url.host ?? "dsh")"
+            }
+            return "ready · \(title ?? url.host ?? url.absoluteString)"
+        case .connecting(let host, _):
+            return "connecting · \(host)"
+        case .failed:
+            return "failed"
+        case .launching:
+            return "launching"
+        case .shuttingDown:
+            return "shutting down"
+        case .idle:
+            return "idle"
         }
     }
 }
@@ -88,6 +107,7 @@ private struct WindowAccessor: NSViewRepresentable {
         let view = NSView()
         DispatchQueue.main.async {
             guard let window = view.window else { return }
+            window.styleMask.insert(.fullSizeContentView)
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.title = ""
