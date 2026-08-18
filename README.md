@@ -79,10 +79,10 @@ Settings live at `~/Library/Application Support/dsh-swiftUI/settings.json`. Defa
   "dshBinaryPath": "/Users/djx/.npm-global/bin/dsh",
   "launchMode": "spawn",
   "listenHost": "127.0.0.1",
-  "preferredPort": 0,
+  "preferredPort": 34247,
   "trustedHosts": ["127.0.0.1", "localhost"],
   "pollIntervalSeconds": 0.5,
-  "spawnTimeoutSeconds": 30,
+  "spawnTimeoutSeconds": 60,
   "autoRestartOnCrash": true
 }
 ```
@@ -92,9 +92,9 @@ Settings live at `~/Library/Application Support/dsh-swiftUI/settings.json`. Defa
 | `dshBinaryPath` | Absolute path to the `dsh` executable. |
 | `launchMode` | `spawn` → fork `dsh web` ourselves; `attach` → only connect to an already-running instance. |
 | `listenHost` | Local host passed to `dsh web --host`. `0.0.0.0` is **not** supported (mirrors dsh's own policy). |
-| `preferredPort` | `0` → let the OS assign; otherwise forwarded to `dsh web --port`. |
+| `preferredPort` | Fixed port forwarded to `dsh web --port`. A fixed port lets the shell adopt the endpoint by probing when the URL line is late, and lets it reclaim the port from orphaned instances. `0` → OS-assigned (URL-line-only startup). |
 | `trustedHosts` | Hosts appended to `dsh web --trusted-host` (repeatable). |
-| `spawnTimeoutSeconds` | How long to wait for the `dsh web:` URL line on stdout before failing. |
+| `spawnTimeoutSeconds` | How long to wait for the `dsh web:` URL line on stdout before probing the fixed port as a fallback. |
 | `autoRestartOnCrash` | One-shot exponential back-off restart on unexpected child exit. |
 
 The shell forwards no working directory to `dsh web` — the dsh SPA picks its own workspace inside the browser UI.

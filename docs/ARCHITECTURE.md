@@ -37,7 +37,7 @@
                             │  Process (stdout/stderr)
                             ▼
 ┌───────────────────────────────────────────────────────────────┐
-│ child process:  `dsh web --host 127.0.0.1 --port 0 …`        │
+│ child process:  `dsh web --host 127.0.0.1 --port 34247 …`     │
 │   ├── node:http server (default bundle)                       │
 │   ├── /api HTTP routes + WebSocket upgrade routes             │
 │   ├── SPA fallback (dist/index.html)                          │
@@ -66,6 +66,8 @@ dsh-swiftUI talks to dsh exclusively through the public HTTP/WebSocket surface t
 - constructs the argv without going through a shell,
 - pipes stdout/stderr to an `AsyncStream<String>` consumed by the UI (for the loading overlay and the "Open Console" debug menu),
 - rescues the `dsh web:` URL line from stdout and forwards it to `EndpointResolver`,
+- reclaims the fixed preferred port before spawning: an orphaned `dsh web` from a previous session (pkill/crash leaves no cleanup) would otherwise make the fresh child die with `EADDRINUSE`. `reclaimPort` probes the port, and only if it truly serves the dsh SPA kills the listener (lsof + SIGTERM/SIGKILL), so an unrelated service squatting on the port is left alone,
+- adopts the endpoint by health probe when the URL line is late or missing: `dsh web`'s own loader can take 30-60s+ to settle depending on startup work, so after the URL deadline we keep the live child and poll `http://<host>:<preferredPort>/` until it serves the SPA (fixed port only),
 - supervises lifetime: SIGTERM on graceful exit, SIGKILL after 5s, exponential back-off on crash (max 30s, single auto-restart),
 - refuses to spawn more than one child at a time.
 
@@ -74,9 +76,14 @@ The launch arguments we send:
 ```
 dsh web
   --host 127.0.0.1
-  --port <preferredPort, 0 = OS-assigned>
+  --port <preferredPort, default 34247; 0 = OS-assigned>
   --trusted-host <each entry in trustedHosts>
 ```
+
+A fixed default port (rather than `0`) is deliberate: it lets the shell adopt
+the endpoint by probing even when the URL line never arrives, and lets the
+orphan reaper target the right listener. Set `0` in Preferences to opt out
+(OS-assigned port, URL-line-only startup).
 
 dsh's web profile accepts exactly those three flags; anything else (e.g. a
 `--workspace`) is rejected as an unknown option. The SPA picks its own

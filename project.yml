@@ -51,6 +51,8 @@ targets:
     platform: macOS
     sources:
       - path: Sources/DSHShell
+      - path: Sources/DSHShell/Bridge/bridge.js
+        buildPhase: resources
       - path: App/DSHShell/AppIcon.icns
         buildPhase: resources
     dependencies:
