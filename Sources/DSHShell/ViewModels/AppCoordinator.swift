@@ -129,6 +129,21 @@ final class AppCoordinator: ObservableObject {
         UNUserNotificationCenter.current().add(request)
     }
 
+    /// The SPA's `document.title` is `"<conversation> — DeepSeek Harness"`,
+    /// or just the product default when no conversation is open. The shell
+    /// only surfaces the real conversation name — in the badge and the window
+    /// title — so the product suffix/default is stripped to nil.
+    private static func normalizedSessionTitle(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let stripped = trimmed.replacingOccurrences(
+            of: #"\s*[-—–]\s*DeepSeek Harness\s*$"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !stripped.isEmpty else { return nil }
+        return stripped
+    }
+
     // MARK: - Private
 
     private func runLifecycle() async {
@@ -200,7 +215,7 @@ extension AppCoordinator: WebBridgeClient {
         case .probe(let report):
             logProbe(report)
         case .title(let text):
-            webSession.title = text.isEmpty ? nil : text
+            webSession.title = Self.normalizedSessionTitle(text)
         case .agentState(let running):
             if running {
                 agentWasRunning = true

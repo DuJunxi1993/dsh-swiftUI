@@ -20,7 +20,7 @@ settings:
     DEVELOPMENT_TEAM: ""
     PRODUCT_NAME: DSHShell
     CURRENT_PROJECT_VERSION: 1
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.1.1"
 configs:
   Debug: debug
   Release: release

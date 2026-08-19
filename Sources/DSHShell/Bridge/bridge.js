@@ -83,25 +83,42 @@
   }
 
   // ---- CSS shim: keep the SPA's top chrome clear of the traffic lights ----
-  var cssShimId = 'dsh-shell-css-shim';
-  function applyCssShim(on) {
+  // The shim is ON by default (the shell always runs a transparent titlebar)
+  // and self-heals: it is re-asserted on every heartbeat scan. Only the
+  // SIDEBAR column is pushed down (the badge floats over it); the main
+  // column keeps full height, so nothing clips at the window bottom.
+  //
+  // Implementation: an inline style on the sidebar column itself. A <style>
+  // element in <head> proved unreliable — the dsh plugin runtime manages
+  // head styles and can drop unknown ones, and cascade battles can lose.
+  // Inline styles cannot be cleaned by head management, win any cascade,
+  // and React never touches this element's style attribute (the sidebar
+  // column has no style prop), so only the heartbeat re-assert matters.
+  // Selector uses dsh's own semantic markers (data-dsh-frame, data-pane),
+  // stable across builds unlike the hashed CSS-module classes; if dsh
+  // renames them the shim degrades to a no-op rather than breaking layout.
+  var shimSidebarSelector = '#root [data-dsh-frame] > [data-pane="sidebar"]';
+  var shimPaddingTop = '20px';
+  var shimMode = true;
+  function ensureCssShim() {
+    if (!shimMode) { return; }
     try {
-      var style = document.getElementById(cssShimId);
-      if (on && !style) {
-        style = document.createElement('style');
-        style.id = cssShimId;
-        style.textContent = 'body > #root, #root { padding-top: 30px !important; }';
-        (document.head || document.documentElement).appendChild(style);
-      } else if (!on && style) {
-        style.parentNode && style.parentNode.removeChild(style);
-      }
-      return { ok: true };
+      var col = document.querySelector(shimSidebarSelector);
+      if (col) { col.style.paddingTop = shimPaddingTop; }
+    } catch (e) { /* ignore */ }
+  }
+  function applyCssShim(on) {
+    shimMode = !!on;
+    try {
+      var col = document.querySelector(shimSidebarSelector);
+      if (col) { col.style.paddingTop = shimMode ? shimPaddingTop : ''; }
+      return { ok: !!col };
     } catch (e) { return { ok: false }; }
   }
 
   // ---- probe: report DOM candidates for native-side selector tuning ----
   function probeCandidates() {
-    var out = { headings: [], buttons: [], inputs: [], running: false };
+    var out = { headings: [], buttons: [], inputs: [], running: false, layout: null };
     try {
       var hs = document.querySelectorAll('h1, h2, h3');
       for (var i = 0; i < Math.min(hs.length, 10); i++) {
@@ -123,6 +140,36 @@
           placeholder: attr(ins[k], 'placeholder'),
           cls: cls(ins[k]).slice(0, 100)
         });
+      }
+      // layout: path from #root down to the grid frame, so the shim can pick
+      // a stable selector for the sidebar column alone.
+      var root = document.getElementById('root');
+      if (root) {
+        var walk = [];
+        var el = root;
+        for (var d = 0; d < 4 && el; d++) {
+          var info = { tag: el.tagName, cls: cls(el).slice(0, 80), data: [] };
+          if (el.attributes) {
+            for (var a = 0; a < el.attributes.length; a++) {
+              var n = el.attributes[a].name;
+              if (n.indexOf('data-') === 0) { info.data.push(n + '=' + (el.attributes[a].value || '')); }
+            }
+          }
+          var gtc = el.style && el.style.gridTemplateColumns;
+          if (gtc) { info.grid = gtc; }
+          var cs = window.getComputedStyle ? window.getComputedStyle(el) : null;
+          if (cs && cs.paddingTop !== '0px') { info.pad = cs.paddingTop; }
+          walk.push(info);
+          el = el.firstElementChild;
+        }
+        out.layout = walk;
+        var shimHits = [];
+        var shimEls = document.querySelectorAll(shimSidebarSelector);
+        for (var s = 0; s < shimEls.length; s++) {
+          var cs2 = window.getComputedStyle ? window.getComputedStyle(shimEls[s]) : null;
+          shimHits.push({ inline: shimEls[s].style.paddingTop, bg: cs2 ? cs2.backgroundColor : '?', rect: (shimEls[s].getBoundingClientRect ? shimEls[s].getBoundingClientRect().height + 'x' + shimEls[s].getBoundingClientRect().width : '?') });
+        }
+        out.shim = shimHits;
       }
     } catch (e) { /* ignore */ }
     return out;
@@ -151,6 +198,7 @@
         lastTitle = t;
         post('title', { text: t });
       }
+      ensureCssShim();
     } catch (e) { /* ignore */ }
   }
 
@@ -185,6 +233,7 @@
   window.__dshShell = bridge;
 
   // initial probe once the app shell has a chance to mount
+  ensureCssShim();
   setTimeout(function () {
     post('probe', probeCandidates());
     scanRunning();

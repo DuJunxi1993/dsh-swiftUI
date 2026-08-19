@@ -1,5 +1,6 @@
 import Foundation
 import WebKit
+import OSLog
 
 /// Events reported by the injected bridge script in the dsh SPA.
 enum WebBridgeEvent: Equatable {
@@ -74,6 +75,18 @@ final class WebBridge: NSObject, WKScriptMessageHandler {
         let payload = object["payload"] as? [String: Any] ?? [:]
         switch type {
         case "probe":
+            if let layout = payload["layout"] as? [[String: Any]] {
+                let lines = layout.map { item -> String in
+                    let data = (item["data"] as? [String])?.joined(separator: " ") ?? ""
+                    let grid = item["grid"] as? String ?? ""
+                    return "\(item["tag"] ?? "?") \(item["cls"] ?? "") [\(data)] \(grid)"
+                }.joined(separator: " | ")
+                Logger(subsystem: "ai.deepseek.dsh-shell", category: "Bridge").debug("bridge layout — \(lines, privacy: .public)")
+            }
+            if let shim = payload["shim"] as? [[String: Any]] {
+                let lines = shim.map { "inline=\($0["inline"] ?? "?") bg=\($0["bg"] ?? "?") rect=\($0["rect"] ?? "?")" }.joined(separator: " | ")
+                Logger(subsystem: "ai.deepseek.dsh-shell", category: "Bridge").debug("bridge shim — \(lines, privacy: .public)")
+            }
             client?.handleBridgeEvent(.probe(parseProbe(payload)))
         case "title":
             if let text = payload["text"] as? String, !text.isEmpty {
