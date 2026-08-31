@@ -110,34 +110,54 @@ public struct SessionStore: Sendable {
     /// not surfaced by the SDK's Swift overlay, so use the raw value.
     private static let zstdAlgorithm = compression_algorithm(rawValue: 0x700)
 
-    /// Decompresses zstd data with the system Compression framework.
+    /// Decompresses zstd data. Apple's `compression_decode_buffer` only handles
+    /// a stripped-down subset of the zstd frame format (no frame header, no
+    /// checksum), which is incompatible with the standard frames produced by
+    /// libzstd and used by dsh. We shell out to the `zstd` CLI by writing the
+    /// payload to a temp file and passing the path as an argument — piping the
+    /// compressed bytes through stdin deadlocks because libzstd's worker
+    /// threads don't drain the input pipe until much later, so the parent's
+    /// synchronous `write` blocks forever once the kernel pipe buffer fills
+    /// (seen in /Library/Logs/DiagnosticReports/DSHShell_*.hang, frame 155).
     static func zstdDecompress(_ data: Data) -> Data? {
         guard !data.isEmpty else { return nil }
-        let capacity = data.count * 8
-        var buffer = Data(count: max(capacity, 64 * 1024))
-        var result: Data?
-        while result == nil {
-            let bufferCount = buffer.count
-            let written = buffer.withUnsafeMutableBytes { dst in
-                data.withUnsafeBytes { src in
-                    compression_decode_buffer(
-                        dst.bindMemory(to: UInt8.self).baseAddress!,
-                        bufferCount,
-                        src.bindMemory(to: UInt8.self).baseAddress!,
-                        data.count,
-                        nil,
-                        zstdAlgorithm
-                    )
-                }
-            }
-            if written > 0 {
-                result = Data(buffer.prefix(written))
-            } else if buffer.count < 64 * 1024 * 1024 {
-                buffer.count *= 2
-            } else {
-                break
-            }
+        return decompressViaCLI(data)
+    }
+
+    /// Spawn `/usr/bin/env zstd -d -c <tmp>`, read stdout, and clean up. PATH
+    /// is set explicitly because `open` launches the app with a minimal env
+    /// that doesn't include Homebrew; without it, `env` can't find `zstd`.
+    private static func decompressViaCLI(_ data: Data) -> Data? {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dsh-zstd-\(UUID().uuidString).zst")
+        do {
+            try data.write(to: tmp)
+        } catch {
+            return nil
         }
-        return result
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["zstd", "-d", "-c", tmp.path]
+        process.environment = [
+            "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        ]
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+        process.standardInput = nil
+
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        let outData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+        return outData
     }
 }

@@ -8,8 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		07F1EB594E772603826216BC /* EndpointResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD461005C588053EACCEBA44 /* EndpointResolver.swift */; };
+		0C0137D0DB5C7671A3BA8001 /* DSHShellBridge.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 13A91F246DD56B207C44B831 /* DSHShellBridge.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1810B775A97F2BF9A2695EB6 /* DSHProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B55A6F32159842400F8E02 /* DSHProcessManager.swift */; };
+		1D0F0816DC32FFD1BCE16677 /* DSHObjCWebUIDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 894CD960891199B62E5A233E /* DSHObjCWebUIDelegate.m */; };
 		3DB7C4B6F3E65043BD718007 /* DSHShellApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2389101D691B8C5B5C1221E8 /* DSHShellApp.swift */; };
+		644538C4804CFF23BFAF7D14 /* DSHObjCWebUIDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 4EF36707F9088B01F537B090 /* DSHObjCWebUIDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		6FBE609953C1256E6792C3F5 /* ShellScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759E0C2EEE18DB8D7145ED3F /* ShellScene.swift */; };
 		7226723F560300B9A19DFE0A /* LaunchMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3948E77E82527D2681372B2 /* LaunchMode.swift */; };
 		74C53526AB41048A10851FD0 /* DSHShellCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E71C709353A0ABDF43036D3F /* DSHShellCore.framework */; };
@@ -20,8 +23,10 @@
 		A0ACAF703BD47296EA69F7A3 /* bridge.js in Resources */ = {isa = PBXBuildFile; fileRef = F68C53CC3E11E0EDBBB8B9EE /* bridge.js */; };
 		AC56FDB7C5F9E042307180B3 /* SessionPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2B411DAC8CE05EF91F72F2 /* SessionPanelView.swift */; };
 		AEE7D744DB0F13473BB0BCCF /* WebSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6169E7629BEB3B0D2D74536 /* WebSurfaceView.swift */; };
+		AF054154979D72384C7F41E9 /* DSHShellBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E66FB254FE31F86C077CA57 /* DSHShellBridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BD427EDF6ACBE3348C0693DB /* HealthProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D81232BC0BF5DCC4FC75EA /* HealthProbe.swift */; };
 		BFB135906B4717202752F56A /* ErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD14FD8BEB3964858ABE8A7 /* ErrorView.swift */; };
+		C8575216B576F633DD33F568 /* DSHShellBridge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 13A91F246DD56B207C44B831 /* DSHShellBridge.framework */; };
 		CE09E1DBD17E449AEA104A3B /* DSHShellCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E71C709353A0ABDF43036D3F /* DSHShellCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		DC1887CE78542768F9AB38E0 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B8166DA5D5F841A4F0CFE1C /* PreferencesView.swift */; };
 		E0DFE95F539919E9D73DE214 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22CA21034947305DFF222C75 /* AppCoordinator.swift */; };
@@ -29,6 +34,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		3634CF0B8C46873F839ED3BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D6D0E729617760173DE5AE05 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5CFC98473C97EA3DDF9FF773;
+			remoteInfo = DSHShellBridge;
+		};
 		9ACCC68ED3E44321A6C3A5B8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D6D0E729617760173DE5AE05 /* Project object */;
@@ -46,6 +58,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				CE09E1DBD17E449AEA104A3B /* DSHShellCore.framework in Embed Frameworks */,
+				0C0137D0DB5C7671A3BA8001 /* DSHShellBridge.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -55,15 +68,20 @@
 /* Begin PBXFileReference section */
 		091568F5F4F9B1C10DD5FF41 /* DSHShell.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DSHShell.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B8166DA5D5F841A4F0CFE1C /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		13A91F246DD56B207C44B831 /* DSHShellBridge.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DSHShellBridge.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		22CA21034947305DFF222C75 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		2389101D691B8C5B5C1221E8 /* DSHShellApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHShellApp.swift; sourceTree = "<group>"; };
 		28CB79A74257B5E9BAA7A468 /* WebBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebBridge.swift; sourceTree = "<group>"; };
 		29DD6AF2425B38B104B7229E /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		3E66FB254FE31F86C077CA57 /* DSHShellBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DSHShellBridge.h; sourceTree = "<group>"; };
+		4532696984DBF10410B14088 /* DSHShell-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DSHShell-Bridging-Header.h"; sourceTree = "<group>"; };
+		4EF36707F9088B01F537B090 /* DSHObjCWebUIDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DSHObjCWebUIDelegate.h; sourceTree = "<group>"; };
 		5DD14FD8BEB3964858ABE8A7 /* ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
 		759E0C2EEE18DB8D7145ED3F /* ShellScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellScene.swift; sourceTree = "<group>"; };
 		7D3C253023D3FE2249D03789 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		7FA498CAEF0366440E369E46 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		88B55A6F32159842400F8E02 /* DSHProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHProcessManager.swift; sourceTree = "<group>"; };
+		894CD960891199B62E5A233E /* DSHObjCWebUIDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DSHObjCWebUIDelegate.m; sourceTree = "<group>"; };
 		94D81232BC0BF5DCC4FC75EA /* HealthProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthProbe.swift; sourceTree = "<group>"; };
 		AF2B411DAC8CE05EF91F72F2 /* SessionPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPanelView.swift; sourceTree = "<group>"; };
 		BD461005C588053EACCEBA44 /* EndpointResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndpointResolver.swift; sourceTree = "<group>"; };
@@ -80,6 +98,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74C53526AB41048A10851FD0 /* DSHShellCore.framework in Frameworks */,
+				C8575216B576F633DD33F568 /* DSHShellBridge.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,6 +125,7 @@
 		2D96400EC095FF25D59DE38D /* DSHShell */ = {
 			isa = PBXGroup;
 			children = (
+				4532696984DBF10410B14088 /* DSHShell-Bridging-Header.h */,
 				2389101D691B8C5B5C1221E8 /* DSHShellApp.swift */,
 				0958398B78DDBFE712108519 /* Bridge */,
 				CF31FFD7B26CAE17763EEB8C /* ViewModels */,
@@ -124,6 +144,15 @@
 				29DD6AF2425B38B104B7229E /* SettingsStore.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		601D4A42DC96268450A495A3 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				4EF36707F9088B01F537B090 /* DSHObjCWebUIDelegate.h */,
+				3E66FB254FE31F86C077CA57 /* DSHShellBridge.h */,
+			);
+			path = include;
 			sourceTree = "<group>";
 		};
 		60647C2CB50EFE9790E7F537 /* Models */ = {
@@ -151,6 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				091568F5F4F9B1C10DD5FF41 /* DSHShell.app */,
+				13A91F246DD56B207C44B831 /* DSHShellBridge.framework */,
 				E71C709353A0ABDF43036D3F /* DSHShellCore.framework */,
 			);
 			name = Products;
@@ -174,6 +204,15 @@
 			path = DSHShellCore;
 			sourceTree = "<group>";
 		};
+		CA54B32F03A7F72CBE3700C8 /* DSHShellBridge */ = {
+			isa = PBXGroup;
+			children = (
+				894CD960891199B62E5A233E /* DSHObjCWebUIDelegate.m */,
+				601D4A42DC96268450A495A3 /* include */,
+			);
+			path = DSHShellBridge;
+			sourceTree = "<group>";
+		};
 		CF31FFD7B26CAE17763EEB8C /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -194,12 +233,25 @@
 			isa = PBXGroup;
 			children = (
 				2D96400EC095FF25D59DE38D /* DSHShell */,
+				CA54B32F03A7F72CBE3700C8 /* DSHShellBridge */,
 				CA1BC1D412322FCA19E39A01 /* DSHShellCore */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		0F14BC444088713B4E188612 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				644538C4804CFF23BFAF7D14 /* DSHObjCWebUIDelegate.h in Headers */,
+				AF054154979D72384C7F41E9 /* DSHShellBridge.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		515768E7335AD7195F8CEB33 /* DSHShellCore */ = {
@@ -219,6 +271,24 @@
 			productReference = E71C709353A0ABDF43036D3F /* DSHShellCore.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		5CFC98473C97EA3DDF9FF773 /* DSHShellBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 36DDA6F4FF472B0441E9A7EE /* Build configuration list for PBXNativeTarget "DSHShellBridge" */;
+			buildPhases = (
+				0F14BC444088713B4E188612 /* Headers */,
+				7A493F31F56356313A0781B2 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DSHShellBridge;
+			packageProductDependencies = (
+			);
+			productName = DSHShellBridge;
+			productReference = 13A91F246DD56B207C44B831 /* DSHShellBridge.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 		631543C978743D57177BB8C8 /* DSHShell */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D04A3307A395E9ED2BEEB66E /* Build configuration list for PBXNativeTarget "DSHShell" */;
@@ -232,6 +302,7 @@
 			);
 			dependencies = (
 				266A83B7E17970014AE5B2FE /* PBXTargetDependency */,
+				2EEC1B3E40B3E501BCA204B5 /* PBXTargetDependency */,
 			);
 			name = DSHShell;
 			packageProductDependencies = (
@@ -250,6 +321,10 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					515768E7335AD7195F8CEB33 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					5CFC98473C97EA3DDF9FF773 = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
@@ -274,6 +349,7 @@
 			projectRoot = "";
 			targets = (
 				515768E7335AD7195F8CEB33 /* DSHShellCore */,
+				5CFC98473C97EA3DDF9FF773 /* DSHShellBridge */,
 				631543C978743D57177BB8C8 /* DSHShell */,
 			);
 		};
@@ -292,6 +368,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7A493F31F56356313A0781B2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1D0F0816DC32FFD1BCE16677 /* DSHObjCWebUIDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C61568EA227DB82FF0B93308 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -329,6 +413,11 @@
 			target = 515768E7335AD7195F8CEB33 /* DSHShellCore */;
 			targetProxy = 9ACCC68ED3E44321A6C3A5B8 /* PBXContainerItemProxy */;
 		};
+		2EEC1B3E40B3E501BCA204B5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5CFC98473C97EA3DDF9FF773 /* DSHShellBridge */;
+			targetProxy = 3634CF0B8C46873F839ED3BA /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -336,6 +425,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/DSHShell/DSHShell.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_PREVIEWS = YES;
@@ -348,6 +438,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.deepseek.dsh-shell";
 				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/DSHShell/DSHShell-Bridging-Header.h";
 			};
 			name = Release;
 		};
@@ -433,7 +524,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -449,6 +540,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/DSHShell/DSHShell.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_PREVIEWS = YES;
@@ -461,6 +553,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.deepseek.dsh-shell";
 				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/DSHShell/DSHShell-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -540,7 +633,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = DSHShell;
@@ -551,9 +644,74 @@
 			};
 			name = Release;
 		};
+		E5CF8C087CBAD199D8239A5A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = App/DSHShellBridge/Info.plist;
+				INSTALL_PATH = "@rpath";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MODULEMAP_FILE = "";
+				OTHER_MODULEMAP_FLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.deepseek.dsh-shell.bridge";
+				PRODUCT_NAME = DSHShellBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		F9696B947DCE6A6D592B874A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = App/DSHShellBridge/Info.plist;
+				INSTALL_PATH = "@rpath";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MODULEMAP_FILE = "";
+				OTHER_MODULEMAP_FLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.deepseek.dsh-shell.bridge";
+				PRODUCT_NAME = DSHShellBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		36DDA6F4FF472B0441E9A7EE /* Build configuration list for PBXNativeTarget "DSHShellBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F9696B947DCE6A6D592B874A /* Debug */,
+				E5CF8C087CBAD199D8239A5A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		84A7DF2D355308AA0E927FE5 /* Build configuration list for PBXNativeTarget "DSHShellCore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -19,6 +19,7 @@ final class DSHProcessManagerTests: XCTestCase {
         let argv = DSHProcessManager.buildArgv(settings: s)
         XCTAssertEqual(argv, [
             "/opt/dsh", "web",
+            "--no-open",
             "--host", "127.0.0.1",
             "--port", "5555",
             "--trusted-host", "127.0.0.1",

@@ -407,6 +407,9 @@ public actor DSHProcessManager {
 
     public static func buildArgv(settings: ShellSettings) -> [String] {
         var argv: [String] = [settings.dshBinaryPath, "web"]
+        // dsh opens the default browser unless told otherwise; the WKWebView is
+        // the shell's own surface, so never hand off to an external browser.
+        argv.append("--no-open")
         argv.append(contentsOf: ["--host", settings.listenHost])
         if settings.preferredPort >= 0 {
             argv.append(contentsOf: ["--port", String(settings.preferredPort)])

@@ -104,25 +104,39 @@ final class SessionStoreTests: XCTestCase {
     }
 
     private static func zstdCompress(_ data: Data) -> Data {
-        // COMPRESSION_ZSTD = 0x700 (named constants not in SDK's Swift overlay)
-        let capacity = compression_encode_scratch_buffer_size(compression_algorithm(rawValue: 0x700))
-        var scratch = Data(count: capacity)
-        var output = Data(count: data.count + 1024)
-        let outputCapacity = output.count
-        let written = output.withUnsafeMutableBytes { out in
-            data.withUnsafeBytes { src in
-                scratch.withUnsafeMutableBytes { scr in
-                    compression_encode_buffer(
-                        out.bindMemory(to: UInt8.self).baseAddress!,
-                        outputCapacity,
-                        src.bindMemory(to: UInt8.self).baseAddress!,
-                        data.count,
-                        scr.bindMemory(to: UInt8.self).baseAddress!,
-                        compression_algorithm(rawValue: 0x700)
-                    )
-                }
-            }
+        // Mirror the production decoder: write to a temp file and pass the
+        // path to `zstd` so we don't share the stdio pipes (which is what
+        // hangs the app when the parent fills the kernel buffer before the
+        // child gets a chance to read).
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dsh-zstd-test-\(UUID().uuidString).zst")
+        do {
+            try data.write(to: tmp)
+        } catch {
+            return Data()
         }
-        return Data(output.prefix(written))
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["zstd", "-z", "-q", "-o", tmp.path, "--force", "/dev/stdin"]
+        let stdinPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardInput = stdinPipe
+        process.standardError = stderrPipe
+        process.standardOutput = Pipe()
+        process.environment = [
+            "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        ]
+        do {
+            try process.run()
+        } catch {
+            return Data()
+        }
+        stdinPipe.fileHandleForWriting.write(data)
+        try? stdinPipe.fileHandleForWriting.close()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return Data() }
+        return (try? Data(contentsOf: tmp)) ?? Data()
     }
 }

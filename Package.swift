@@ -8,16 +8,22 @@ let package = Package(
     ],
     products: [
         .executable(name: "DSHShell", targets: ["DSHShell"]),
-        .library(name: "DSHShellCore", targets: ["DSHShellCore"])
+        .library(name: "DSHShellCore", targets: ["DSHShellCore"]),
+        .library(name: "DSHShellBridge", targets: ["DSHShellBridge"])
     ],
     targets: [
         .target(
             name: "DSHShellCore",
             path: "Sources/DSHShellCore"
         ),
+        .target(
+            name: "DSHShellBridge",
+            path: "Sources/DSHShellBridge",
+            publicHeadersPath: "include"
+        ),
         .executableTarget(
             name: "DSHShell",
-            dependencies: ["DSHShellCore"],
+            dependencies: ["DSHShellCore", "DSHShellBridge"],
             path: "Sources/DSHShell"
         ),
         .testTarget(

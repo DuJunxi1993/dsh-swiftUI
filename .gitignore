@@ -60,6 +60,10 @@ Icon
 .env
 .env.local
 *.log
+
+# Design assets (draft icon exports, large binary blobs)
+*.icns
+DeepSeek_*.icns
 .DSHShell-local/
 .DSHShell.xcodeproj/xcuserdata/
 .DSHShell.xcodeproj/project.xcworkspace/xcuserdata/
