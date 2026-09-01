@@ -4,43 +4,18 @@ import OSLog
 import DSHShellCore
 import DSHShellBridge
 
-/// A `WKWebView` that intercepts Finder file drops before the page sees them
-/// and hands the file paths to the bridge (the SPA has no drop zones, so we
-/// route paths into the composer instead of swallowing a page-native drop).
-final class DroppableWebView: WKWebView {
-    var onFilesDropped: (([String]) -> Void)?
-
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        hasFileURLs(sender) ? .copy : []
-    }
-
-    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        hasFileURLs(sender) ? .copy : []
-    }
-
-    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let urls = sender.draggingPasteboard.readObjects(
-            forClasses: [NSURL.self],
-            options: [.urlReadingFileURLsOnly: true]
-        ) as? [URL] ?? []
-        guard !urls.isEmpty else {
-            return super.performDragOperation(sender)
-        }
-        onFilesDropped?(urls.map(\.path))
-        return true
-    }
-
-    private func hasFileURLs(_ sender: NSDraggingInfo) -> Bool {
-        (sender.draggingPasteboard.readObjects(
-            forClasses: [NSURL.self],
-            options: [.urlReadingFileURLsOnly: true]
-        ) as? [URL])?.isEmpty == false
-    }
-}
-
 /// A `WKWebView` bridged into SwiftUI. The native side owns the container; the
 /// web side is the dsh SPA. The bridge script (`bridge.js`) is injected at
 /// document start to give the shell a two-way channel with the page.
+///
+/// External drops (Finder images/files onto the window) are deliberately NOT
+/// intercepted at the AppKit level. WKWebView's default `draggingEntered/…/
+/// performDragOperation` forward the drop as a DOM `dragover` + `drop` event
+/// to the page, where `event.dataTransfer.files` exposes the actual `File`
+/// objects. dsh-session-manager's image-attachment flow (and any other SPA
+/// drop handler) then works exactly as it does in a regular browser. An
+/// earlier `DroppableWebView` subclass claimed the drop in AppKit and only
+/// forwarded file paths as text, which broke image attachments entirely.
 struct WebSurfaceView: NSViewRepresentable {
     let url: URL
     weak var bridgeClient: WebBridgeClient?
@@ -69,7 +44,7 @@ struct WebSurfaceView: NSViewRepresentable {
         controller.add(bridge, name: "dshBridge")
         config.userContentController = controller
 
-        let view = DroppableWebView(frame: .zero, configuration: config)
+        let view = WKWebView(frame: .zero, configuration: config)
         view.allowsBackForwardNavigationGestures = false
         view.translatesAutoresizingMaskIntoConstraints = false
         // WKUIDelegate is implemented in pure ObjC (DSHObjCWebUIDelegate) so the
@@ -82,9 +57,6 @@ struct WebSurfaceView: NSViewRepresentable {
         view.uiDelegate = objcDelegate
         view.navigationDelegate = context.coordinator
         context.coordinator.uiLogger.notice("webView installed — uiDelegate=\(String(describing: view.uiDelegate), privacy: .public) navDelegate=\(String(describing: view.navigationDelegate), privacy: .public) url=\(url.absoluteString, privacy: .public)")
-        view.onFilesDropped = { [weak bridgeClient] paths in
-            bridgeClient?.handleDroppedFiles(paths)
-        }
 
         context.coordinator.bridge = bridge
         bridge.webView = view

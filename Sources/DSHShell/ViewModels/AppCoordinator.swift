@@ -256,9 +256,4 @@ extension AppCoordinator: WebBridgeClient {
     func webInjectText(_ text: String) {
         bridge?.invoke(.injectText(text))
     }
-
-    func handleDroppedFiles(_ paths: [String]) {
-        webInjectText(paths.joined(separator: "\n"))
-        logger.info("dropped \(paths.count, privacy: .public) file(s) into composer")
-    }
 }

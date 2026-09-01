@@ -42,7 +42,6 @@ enum WebAction {
 protocol WebBridgeClient: AnyObject {
     func handleBridgeEvent(_ event: WebBridgeEvent)
     func bridgeReady(_ bridge: WebBridge)
-    func handleDroppedFiles(_ paths: [String])
 }
 
 /// Owns the injected user script and the `WKScriptMessageHandler` that routes
